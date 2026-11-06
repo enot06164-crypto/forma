@@ -34,6 +34,23 @@ docker run -d --name forma --restart unless-stopped -p 8080:8080 \
   -v forma_data:/data --shm-size=512m forma
 ```
 
+## Автозапуск
+
+Все контейнеры создаются с `--restart unless-stopped` — после перезагрузки хоста
+поднимаются сами (`docker update --restart unless-stopped <name>` для существующих).
+
+Публичный доступ идёт через quick-туннель Cloudflare, который запускается **на этой
+машине**, а не в контейнере: у Docker-хоста нет прямого выхода в интернет, поэтому
+`cloudflared` внутри контейнера не может достучаться до `api.trycloudflare.com`.
+Скрипт `tunnel-up.sh` поднимает туннель, если он упал, и пересоздаёт контейнер
+`forma`, если публичный адрес сменился:
+
+```bash
+crontab -e
+@reboot /home/hermes/workspace/convert/tunnel-up.sh
+*/5 * * * * /home/hermes/workspace/convert/tunnel-up.sh
+```
+
 ## Что внутри
 
 | Слой | Технологии |
