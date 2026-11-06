@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# сгенерированные тестовые данные и отчёты
+testdata/
+test_report.jsonl
+test_summary.json
+sticker_report.json
+
+# локальные артефакты
+.DS_Store
+*.log

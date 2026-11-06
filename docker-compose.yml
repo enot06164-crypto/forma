@@ -1,0 +1,20 @@
+services:
+  forma:
+    build: .
+    image: forma:latest
+    container_name: forma
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # адрес, который попадёт в QR-коды и ссылки на страницы файлов
+      PUBLIC_BASE_URL: "http://192.168.1.194:8080"
+      TTL_DAYS: "7"
+      MAX_UPLOAD_MB: "200"
+    volumes:
+      - forma_data:/data
+    # LibreOffice и ffmpeg любят /dev/shm побольше стандартных 64 МБ
+    shm_size: "512m"
+
+volumes:
+  forma_data:

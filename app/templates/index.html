@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FORMA — конвертер файлов и студия стикеров</title>
+<meta name="description" content="Конвертация изображений, аудио, видео и документов. Студия стикеров Telegram с круглой маской. Хранилище и скачивание по QR.">
+<meta name="theme-color" content="#08090a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23d8ff3e'/%3E%3Cpath d='M9 22V10h13v3.4h-9.2v2.2h7.6v3.3h-7.6V22z' fill='%230a0b00'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="grain"></div>
+
+<header class="topbar">
+  <a class="brand" href="/"><span class="mark">F</span>FORMA<span class="ver">v1.0</span></a>
+  <div class="topbar-mid">конвертер файлов · студия стикеров · хранилище</div>
+  <div class="status"><i class="dot"></i> сервер онлайн</div>
+</header>
+
+<main class="shell">
+  <nav class="rail" aria-label="Разделы">
+    <button class="rail-btn active" data-view="convert" type="button">
+      <svg viewBox="0 0 24 24"><path d="M4 7h11M4 7l3-3M4 7l3 3"/><path d="M20 17H9m11 0l-3-3m3 3l-3 3"/></svg>
+      Конвертер
+    </button>
+    <button class="rail-btn" data-view="stickers" type="button">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M8.5 8.5h.01"/></svg>
+      Стикеры
+    </button>
+    <button class="rail-btn" data-view="library" type="button">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/></svg>
+      Хранилище
+    </button>
+    <div class="rail-spacer"></div>
+    <div class="rail-note">local · docker</div>
+  </nav>
+
+  <section class="work">
+    <!-- ============================================ КОНВЕРТЕР -->
+    <div class="view active" id="view-convert">
+      <div class="view-head">
+        <p class="eyebrow">01 — конвертация</p>
+        <h1>Один файл на входе,<br>любой формат на выходе</h1>
+        <p>Перетащи файл — покажем только те форматы, в которые он действительно конвертируется. Без «загрузки в облако»: всё считается на этом сервере.</p>
+      </div>
+
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Выбрать файл">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="drop-icon">
+          <svg viewBox="0 0 48 48"><path d="M24 8v22m0 0l-8-8m8 8l8-8"/><path d="M8 32v4a4 4 0 004 4h24a4 4 0 004-4v-4"/></svg>
+        </div>
+        <p class="drop-title">Перетащи файл сюда</p>
+        <p class="drop-sub">или нажми, чтобы выбрать на устройстве</p>
+        <p class="drop-hint">до 200 МБ · изображения · аудио · видео · документы</p>
+        <input type="file" id="file" hidden>
+      </div>
+
+      <div class="filecard" id="filecard" hidden>
+        <div class="thumb" id="fc-thumb"><span>—</span></div>
+        <div class="info">
+          <div class="fname" id="fc-name">—</div>
+          <div class="fmeta" id="fc-meta"></div>
+        </div>
+        <button class="icon-btn" id="fc-reset" title="Убрать файл" type="button">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="targets" id="targets" hidden>
+        <div class="section-label">Целевой формат <em id="targets-kind"></em></div>
+        <div class="chips" id="chips"></div>
+
+        <div class="opts" id="opts" hidden>
+          <div class="opt" id="opt-quality" hidden>
+            <label>Качество <span class="val" id="q-val">88</span></label>
+            <input type="range" id="quality" min="40" max="100" value="88">
+          </div>
+          <div class="opt" id="opt-dim" hidden>
+            <label>Макс. сторона</label>
+            <select id="maxdim">
+              <option value="0">оригинал</option>
+              <option value="2048">2048 px</option>
+              <option value="1280">1280 px</option>
+              <option value="800">800 px</option>
+              <option value="512">512 px</option>
+            </select>
+          </div>
+          <div class="opt" id="opt-dpi" hidden>
+            <label>DPI рендера</label>
+            <select id="dpi">
+              <option value="96">96</option>
+              <option value="150" selected>150</option>
+              <option value="200">200</option>
+              <option value="300">300</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn primary wide" id="go" type="button" disabled>
+          <svg viewBox="0 0 24 24"><path d="M4 12h14m0 0l-5-5m5 5l-5 5"/></svg>
+          Конвертировать
+        </button>
+      </div>
+
+      <div class="progress" id="progress" hidden>
+        <div class="progress-top"><span id="p-label">обработка</span><b id="p-pct">0%</b></div>
+        <div class="bar"><i id="p-bar"></i></div>
+        <div class="progress-note" id="p-note">подготовка…</div>
+      </div>
+
+      <div class="formats-strip">
+        <div class="fmt-col">
+          <h4>изображения <b>10</b></h4>
+          <div class="fmt-list">png jpg webp avif gif bmp tiff ico <span>heic svg</span></div>
+        </div>
+        <div class="fmt-col">
+          <h4>аудио <b>7</b></h4>
+          <div class="fmt-list">mp3 wav ogg opus flac m4a aac</div>
+        </div>
+        <div class="fmt-col">
+          <h4>видео <b>5</b></h4>
+          <div class="fmt-list">mp4 webm mkv mov gif <span>+ извлечение звука</span></div>
+        </div>
+        <div class="fmt-col">
+          <h4>документы <b>8</b></h4>
+          <div class="fmt-list">pdf docx xlsx pptx odt txt csv html</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ СТИКЕРЫ -->
+    <div class="view" id="view-stickers">
+      <div class="view-head">
+        <p class="eyebrow">02 — студия стикеров</p>
+        <h1>Стикеры Telegram<br>по его же правилам</h1>
+        <p>Обычные, анимированные и видео-стикеры. Круглая маска вырезает прозрачность по кругу — как в наборах с «кругляшами».</p>
+      </div>
+
+      <div class="drop" id="drop2" tabindex="0" role="button" aria-label="Выбрать файл для стикера">
+        <span class="corner tl"></span><span class="corner tr"></span>
+        <span class="corner bl"></span><span class="corner br"></span>
+        <div class="drop-icon">
+          <svg viewBox="0 0 48 48"><rect x="8" y="8" width="32" height="32" rx="9"/><circle cx="24" cy="24" r="8"/><path d="M17 17h.01"/></svg>
+        </div>
+        <p class="drop-title">Картинка, GIF или видео</p>
+        <p class="drop-sub">нажми или перетащи — соберём стикер 512×512</p>
+        <p class="drop-hint">png · jpg · webp · gif · mp4 · webm · mov</p>
+        <input type="file" id="file2" hidden>
+      </div>
+
+      <div class="filecard" id="filecard2" hidden>
+        <div class="thumb" id="fc2-thumb"><span>—</span></div>
+        <div class="info">
+          <div class="fname" id="fc2-name">—</div>
+          <div class="fmeta" id="fc2-meta"></div>
+        </div>
+        <button class="icon-btn" id="fc2-reset" title="Убрать файл" type="button">
+          <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <div id="sticker-form" hidden>
+        <div class="segmented" id="mode">
+          <button type="button" data-mode="static" class="on">Обычный</button>
+          <button type="button" data-mode="animated">Анимированный</button>
+          <button type="button" data-mode="video">Видео</button>
+        </div>
+
+        <div class="specs" id="specs"></div>
+
+        <div class="mask-row">
+          <div class="mask-visual" id="mask-visual"></div>
+          <div class="mask-text">
+            <b>Круглая маска</b>
+            <span>Вырезает прозрачность по кругу — фон за пределами круга исчезает</span>
+          </div>
+          <div class="switch" id="mask-switch" role="switch" aria-checked="false" tabindex="0"></div>
+        </div>
+
+        <div class="editor" id="editor" hidden>
+          <div class="editor-head">
+            <span class="section-label">фрагмент <em id="ed-range">0.00 – 3.00 с</em></span>
+            <button class="btn ghost small" id="ed-play" type="button">
+              <svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>
+              Проиграть фрагмент
+            </button>
+          </div>
+          <div class="ed-stage">
+            <video id="ed-video" muted playsinline preload="metadata"></video>
+          </div>
+          <div class="ed-timeline" id="ed-timeline">
+            <div class="ed-track"></div>
+            <div class="ed-sel" id="ed-sel"></div>
+            <div class="ed-handle" id="ed-h-start"></div>
+            <div class="ed-handle" id="ed-h-end"></div>
+            <div class="ed-playhead" id="ed-playhead"></div>
+          </div>
+          <div class="ed-meta">
+            <span>начало <b id="ed-start">0.00</b></span>
+            <span>конец <b id="ed-end">3.00</b></span>
+            <span>длина <b id="ed-len">3.00</b> / 3.00 с</span>
+            <span class="ed-hint">тяни ручки · клик по полосе сдвигает окно</span>
+          </div>
+        </div>
+
+        <button class="btn primary wide" id="go2" type="button">
+          <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          Собрать стикер
+        </button>
+      </div>
+
+      <div class="progress" id="progress2" hidden>
+        <div class="progress-top"><span id="p2-label">сборка</span><b id="p2-pct">0%</b></div>
+        <div class="bar"><i id="p2-bar"></i></div>
+        <div class="progress-note" id="p2-note">подготовка…</div>
+      </div>
+
+      <div class="limits">
+        <div class="section-label">лимиты telegram <em>проверяются при сборке</em></div>
+        <div class="limit-row">
+          <span class="limit-name">Обычный</span>
+          <span class="limit-spec">512×512 · PNG / WEBP · до 512 КБ</span>
+        </div>
+        <div class="limit-row">
+          <span class="limit-name">Анимированный</span>
+          <span class="limit-spec">512×512 · VP9 + alpha · до 3 с · до 64 КБ</span>
+        </div>
+        <div class="limit-row">
+          <span class="limit-name">Видео</span>
+          <span class="limit-spec">512×512 · VP9 · до 3 с · до 256 КБ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================ ХРАНИЛИЩЕ -->
+    <div class="view" id="view-library">
+      <div class="view-head">
+        <p class="eyebrow">03 — хранилище</p>
+        <h1>Твои файлы</h1>
+        <p>Привязаны к cookie этого браузера. Живут 7 дней, потом удаляются автоматически. Ссылка и QR работают без cookie.</p>
+      </div>
+      <div class="lib" id="lib"></div>
+    </div>
+  </section>
+
+  <!-- ============================================ ДОК -->
+  <aside class="dock" id="dock">
+    <div class="dock-head"><span>Результат</span><span class="tag" id="dock-tag">ожидание</span></div>
+    <div class="dock-empty" id="dock-empty">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="9" cy="8" r="1.4"/></svg>
+      <div>Здесь появится превью,<br>размер и кнопки скачивания.</div>
+    </div>
+    <div class="dock-body" id="dock-body" hidden></div>
+  </aside>
+</main>
+
+<!-- ============================================ СТАТИСТИКА -->
+<footer class="stats" id="stats">
+  <div class="stats-head">
+    <h2>Сконвертировано на этом сервере</h2>
+    <span>обновляется в реальном времени</span>
+  </div>
+  <div class="stats-grid">
+    <div class="stat accent">
+      <div class="num" data-count="{{ stats.bytes }}" data-format="gb">0<u>ГБ</u></div>
+      <div class="lbl">объём результатов</div>
+    </div>
+    <div class="stat">
+      <div class="num" data-count="{{ stats.outputs }}">0</div>
+      <div class="lbl">файлов на выходе</div>
+    </div>
+    <div class="stat">
+      <div class="num" data-count="{{ stats.sources }}">0</div>
+      <div class="lbl">загружено исходников</div>
+    </div>
+    <div class="stat">
+      <div class="num" data-count="{{ stats.by_ext | length }}">0</div>
+      <div class="lbl">форматов в работе</div>
+    </div>
+  </div>
+  <div class="stats-bar" id="stats-bar"></div>
+  <div class="legend" id="legend"></div>
+</footer>
+
+<!-- ============================================ QR -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h3>Скачать по QR</h3>
+    <p>Наведи камеру телефона — откроется страница файла с превью.</p>
+    <div class="qr-wrap"><img id="qr-img" alt="QR-код файла"></div>
+    <div class="link-row">
+      <input id="qr-link" readonly>
+      <button class="btn ghost" id="qr-copy" type="button">Копировать</button>
+    </div>
+    <button class="btn wide" id="qr-close" type="button">Закрыть</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script id="boot" type="application/json">{{ {"base": base, "stats": stats} | tojson }}</script>
+<script src="/static/app.js"></script>
+</body>
+</html>

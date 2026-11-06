@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{ f.name }} — FORMA</title>
+<meta name="theme-color" content="#08090a">
+<meta property="og:title" content="{{ f.name }}">
+<meta property="og:description" content="{{ f.ext | upper }} · {{ (f.size / 1024) | round(1) }} КБ — скачать с FORMA">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23d8ff3e'/%3E%3Cpath d='M9 22V10h13v3.4h-9.2v2.2h7.6v3.3h-7.6V22z' fill='%230a0b00'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/app.css">
+<style>
+  .dl-wrap { position: relative; z-index: 2; max-width: 980px; margin: 0 auto; padding: 40px 20px 80px; }
+  .dl-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start; }
+  .dl-card { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); overflow: hidden; }
+  .dl-preview { min-height: 260px; display: grid; place-items: center; background: var(--bg-2); border-bottom: 1px solid var(--line); }
+  .dl-preview img, .dl-preview video { max-width: 100%; max-height: 460px; display: block; }
+  .dl-preview audio { width: 100%; padding: 28px; }
+  .dl-preview iframe { width: 100%; height: 460px; border: 0; background: #fff; }
+  .dl-preview .txt { font-family: var(--font-mono); font-size: 11px; line-height: 1.65; color: var(--muted); padding: 20px; white-space: pre-wrap; word-break: break-word; max-height: 420px; overflow: auto; width: 100%; align-self: start; }
+  .dl-preview .ph { font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); padding: 60px 0; }
+  .dl-preview.checker {
+    background-image:
+      linear-gradient(45deg, #15181b 25%, transparent 25%),
+      linear-gradient(-45deg, #15181b 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #15181b 75%),
+      linear-gradient(-45deg, transparent 75%, #15181b 75%);
+    background-size: 18px 18px;
+    background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+    background-color: #0e1012;
+  }
+  .dl-body { padding: 22px; }
+  .dl-name { font-family: var(--font-display); font-size: 19px; font-weight: 500; letter-spacing: -.02em; margin: 0 0 6px; word-break: break-word; }
+  .dl-sub { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+  .dl-side { display: grid; gap: 14px; }
+  .qr-card { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); padding: 16px; text-align: center; }
+  .qr-card .qr-wrap { margin-bottom: 12px; }
+  .qr-card p { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin: 0; }
+  .dl-actions { display: grid; gap: 8px; }
+  .dl-note { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
+  @media (max-width: 820px) {
+    .dl-grid { grid-template-columns: 1fr; }
+    .dl-wrap { padding: 24px 16px 90px; }
+    .dl-preview iframe { height: 320px; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header class="topbar">
+  <a class="brand" href="/"><span class="mark">F</span>FORMA<span class="ver">v1.0</span></a>
+  <div class="topbar-mid">страница файла · скачивание по ссылке или QR</div>
+  <div class="status"><i class="dot"></i> файл доступен</div>
+</header>
+
+<div class="dl-wrap">
+  <p class="eyebrow">файл готов</p>
+  <div class="dl-grid">
+    <div class="dl-card">
+      <div class="dl-preview{% if f.ext in ['png','webp','avif','gif','webm'] %} checker{% endif %}">
+        {% if f.kind == 'image' and f.ext != 'svg' %}
+          <img src="/p/{{ f.id }}" alt="{{ f.name }}">
+        {% elif f.kind == 'video' %}
+          <video src="/p/{{ f.id }}" controls autoplay muted loop playsinline></video>
+        {% elif f.kind == 'audio' %}
+          <audio src="/p/{{ f.id }}" controls></audio>
+        {% elif f.ext == 'pdf' %}
+          <iframe src="/p/{{ f.id }}" title="PDF"></iframe>
+        {% elif text %}
+          <div class="txt">{{ text }}</div>
+        {% else %}
+          <div class="ph">{{ f.ext }} · предпросмотр недоступен</div>
+        {% endif %}
+      </div>
+      <div class="dl-body">
+        <h1 class="dl-name">{{ f.name }}</h1>
+        <div class="dl-sub">
+          {{ f.ext | upper }} · {{ (f.size / 1024) | round(1) }} КБ
+          {% if f.meta.width %} · {{ f.meta.width }}×{{ f.meta.height }}{% endif %}
+          {% if f.meta.duration %} · {{ f.meta.duration | round(2) }} с{% endif %}
+        </div>
+        <div class="dl-actions">
+          <a class="btn primary wide" href="/f/{{ f.id }}" download>Скачать файл</a>
+          <a class="btn ghost wide" href="/">Открыть конвертер</a>
+        </div>
+        <p class="dl-note">Ссылка работает без cookie и не привязана к браузеру. Файл хранится 7 дней, затем удаляется автоматически.</p>
+      </div>
+    </div>
+
+    <div class="dl-side">
+      <div class="qr-card">
+        <div class="qr-wrap"><img src="/qr/{{ f.id }}.png" alt="QR-код для скачивания"></div>
+        <p>наведи камеру телефона</p>
+      </div>
+      <div class="meta-rows">
+        {% if f.meta.width %}<div class="meta-row"><span>разрешение</span><b>{{ f.meta.width }}×{{ f.meta.height }}</b></div>{% endif %}
+        {% if f.meta.duration %}<div class="meta-row"><span>длительность</span><b>{{ f.meta.duration | round(2) }} с</b></div>{% endif %}
+        {% if f.meta.vcodec %}<div class="meta-row"><span>кодек</span><b>{{ f.meta.vcodec }}</b></div>{% endif %}
+        {% if f.meta.acodec %}<div class="meta-row"><span>аудио</span><b>{{ f.meta.acodec }}</b></div>{% endif %}
+        {% if f.meta.mask is defined %}<div class="meta-row"><span>маска</span><b>{{ 'круглая' if f.meta.mask else 'нет' }}</b></div>{% endif %}
+        <div class="meta-row"><span>хранение</span><b>7 дней</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="stats">
+  <div class="stats-head">
+    <h2>Всего сконвертировано</h2>
+    <span>этот сервер</span>
+  </div>
+  <div class="stats-grid">
+    <div class="stat accent">
+      <div class="num">{% if stats.bytes >= 1073741824 %}{{ '%.2f' | format(stats.bytes / 1073741824) }}<u>ГБ</u>{% else %}{{ '%.1f' | format(stats.bytes / 1048576) }}<u>МБ</u>{% endif %}</div>
+      <div class="lbl">объём результатов</div>
+    </div>
+    <div class="stat"><div class="num">{{ stats.outputs }}</div><div class="lbl">файлов на выходе</div></div>
+    <div class="stat"><div class="num">{{ stats.sources }}</div><div class="lbl">исходников</div></div>
+    <div class="stat"><div class="num">{{ stats.by_ext | length }}</div><div class="lbl">форматов</div></div>
+  </div>
+</footer>
+</body>
+</html>
