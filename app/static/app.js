@@ -542,7 +542,7 @@
 
   /* ---------------------------------------------------------- QR */
   function openQR(id) {
-    $("#qr-img").src = "/qr/" + id + ".png";
+    $("#qr-img").src = "/qr/" + id + ".png?v=" + (boot.v || "");
     $("#qr-link").value = BASE + "/d/" + id;
     $("#modal").classList.add("open");
   }

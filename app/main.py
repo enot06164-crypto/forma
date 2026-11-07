@@ -1,6 +1,7 @@
 """FORMA — конвертер файлов и студия стикеров. FastAPI-приложение."""
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import os
@@ -107,10 +108,11 @@ def _own(fid: str, sid: str) -> dict:
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
+    base = base_url(request)
     return templates.TemplateResponse("index.html", {
-        "request": request, "base": base_url(request), "stats": db.stats(),
-        "kinds": KIND_LABEL,
-    })
+        "request": request, "base": base, "stats": db.stats(),
+        "kinds": KIND_LABEL, "v": hashlib.md5(base.encode()).hexdigest()[:8],
+    }, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/d/{fid}", response_class=HTMLResponse)
@@ -126,10 +128,12 @@ async def download_page(fid: str, request: Request):
                 text = fh.read(4000)
         except Exception:
             text = None
+    base = base_url(request)
     return templates.TemplateResponse("download.html", {
-        "request": request, "base": base_url(request), "f": payload,
+        "request": request, "base": base, "f": payload,
         "text": text, "stats": db.stats(),
-    })
+        "v": hashlib.md5(base.encode()).hexdigest()[:8],
+    }, headers={"Cache-Control": "no-store"})
 
 
 # ------------------------------------------------------------------ API
@@ -357,8 +361,10 @@ async def qr(fid: str, request: Request):
     img = qrcode.make(url, box_size=10, border=2)
     buf = io.BytesIO()
     img.save(buf, "PNG")
+    # QR зависит от PUBLIC_BASE_URL: кешировать нельзя, иначе после смены
+    # адреса браузер продолжает показывать старый код
     return Response(buf.getvalue(), media_type="image/png",
-                    headers={"Cache-Control": "public, max-age=3600"})
+                    headers={"Cache-Control": "no-store, max-age=0"})
 
 
 @app.get("/healthz")
