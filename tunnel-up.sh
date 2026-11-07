@@ -12,12 +12,15 @@ BIN=/home/hermes/bin/cloudflared
 TARGET=http://192.168.1.194:8080
 SYNC_LOG=/tmp/tunnel-sync.log
 
-exec 9>/tmp/tunnel-up.lock
+# отдельный файл блокировки: старый /tmp/tunnel-up.lock остался открытым
+# у запущенного cloudflared (наследовал fd), из-за чего cron молча выходил
+exec 9>/home/hermes/workspace/convert/.tunnel.lock
 flock -n 9 || exit 0
 
 # 1. туннель жив?
 if ! pgrep -f "cloudflared tunnel --url $TARGET" >/dev/null 2>&1; then
-  nohup "$BIN" tunnel --url "$TARGET" --no-autoupdate > "$LOG" 2>&1 &
+  # 9>&- — не отдавать дочернему процессу файл блокировки, иначе он держит его вечно
+  nohup "$BIN" tunnel --url "$TARGET" --no-autoupdate > "$LOG" 2>&1 9>&- &
   sleep 14
 fi
 
@@ -25,6 +28,9 @@ fi
 URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$LOG" 2>/dev/null \
       | grep -v '^https://api\.' | tail -1)
 [ -z "${URL:-}" ] && exit 0
+
+# 2b. всегда держим актуальный адрес в удобном файле
+echo "$URL" > /home/hermes/forma-url.txt
 
 # 3. что сейчас в контейнере
 CUR=$(docker inspect forma --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
