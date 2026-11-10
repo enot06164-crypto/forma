@@ -108,6 +108,15 @@ crontab -e
 | GET | `/d/{id}` | страница файла (для QR) |
 | GET | `/qr/{id}.png` | QR-код на страницу файла |
 
+## Проверки
+
+```bash
+python3 make_testdata.py    # сгенерировать сэмплы в testdata/
+python3 test_matrix.py      # матрица конвертации (132 конверсии), проверка сигнатур
+python3 test_stickers.py    # 9 кейсов стикеров: лимиты, кодек, альфа в углу/центре
+python3 test_unicode.py     # кириллица в именах: превью/скачивание/страница/QR без 500
+```
+
 ## Хранение
 
 - Файлы: `/data/files/<session>/<id>.<ext>`, метаданные — `/data/forma.db`
