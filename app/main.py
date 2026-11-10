@@ -332,9 +332,12 @@ async def preview(fid: str):
     f = db.get_file(fid)
     if not f or not os.path.exists(f["path"]):
         raise HTTPException(404, "файл не найден")
+    # content_disposition_type заставляет Starlette сам закодировать имя по RFC 5987:
+    # вручную подставлять filename нельзя — HTTP-заголовки только latin-1,
+    # а имена бывают на кириллице
     return FileResponse(f["path"], media_type=mime_of(f["ext"]),
-                        headers={"Content-Disposition": f'inline; filename="{f["name"]}"',
-                                 "Cache-Control": "private, max-age=600"})
+                        filename=f["name"], content_disposition_type="inline",
+                        headers={"Cache-Control": "private, max-age=600"})
 
 
 @app.get("/poster/{fid}.png")
@@ -432,7 +435,7 @@ def _run_sticker(jid: str) -> None:
         meta["poster"] = poster_path
         meta["mode"] = mode
         size = os.path.getsize(out_path)
-        name = Path(f["name"]).stem + ("_sticker." if mode == "static" else "_sticker.webm")
+        name = Path(f["name"]).stem + "_sticker." + out_ext
         db.add_file(out_id, job["sid"], name, out_ext, "image" if mode == "static" else "video",
                     size, out_path, "output", f["id"], meta)
         job.update(status="done", progress=100.0, note="готово", out_id=out_id)
